@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cal Magic 2012G West — Season Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy:  { DEFAULT: "#0a2463", light: "#1a3a8f", dark: "#061540" },
+            gold:  { DEFAULT: "#f5a623", light: "#ffc04d", dark: "#c47f0f" },
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .tab-active   { background: #0a2463; color: #f5a623; border-color: #f5a623; }
+    .tab-inactive { background: white;   color: #0a2463; border-color: #e5e7eb; }
+    .highlight-row { background: #fffbeb; font-weight: 600; }
+    .badge-win  { background:#dcfce7; color:#166534; }
+    .badge-loss { background:#fee2e2; color:#991b1b; }
+    .badge-upcoming { background:#dbeafe; color:#1e40af; }
+    .badge-sf   { background:#fef9c3; color:#854d0e; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+
+  <!-- Header -->
+  <header class="bg-navy text-white shadow-lg">
+    <div class="max-w-5xl mx-auto px-4 py-5 flex items-center gap-4">
+      <div class="text-4xl">⚽</div>
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight text-gold">Cal Magic 2012G West</h1>
+        <p class="text-sm text-blue-200 mt-0.5">California Magic Soccer Club · Season Hub</p>
+      </div>
+      <div class="ml-auto text-right text-xs text-blue-300">
+        <div>Last updated</div>
+        <div class="font-medium text-white">{{ last_updated }}</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Tab Navigation -->
+  <div class="max-w-5xl mx-auto px-4 mt-6">
+    <div class="flex gap-2 border-b border-gray-200">
+      <button onclick="showTab('tournament')" id="tab-tournament"
+        class="tab-active px-5 py-2.5 rounded-t-lg text-sm font-semibold border-t border-l border-r transition-all">
+        🏆 Tournament
+      </button>
+      <button onclick="showTab('league')" id="tab-league"
+        class="tab-inactive px-5 py-2.5 rounded-t-lg text-sm font-semibold border-t border-l border-r transition-all">
+        📅 League
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== TOURNAMENT TAB ===== -->
+  <div id="panel-tournament" class="max-w-5xl mx-auto px-4 py-6 space-y-6">
+
+    <!-- Event banner -->
+    <div class="bg-navy text-white rounded-xl p-5 flex flex-col sm:flex-row sm:items-center gap-3">
+      <div class="flex-1">
+        <h2 class="text-xl font-bold text-gold">{{ tournament.name }}</h2>
+        <p class="text-blue-200 text-sm mt-1">{{ tournament.division }}</p>
+        <p class="text-blue-300 text-xs mt-1">📍 {{ tournament.location }} &nbsp;·&nbsp; 🗓 {{ tournament.dates }}</p>
+      </div>
+      <div class="text-center bg-gold rounded-lg px-6 py-3">
+        <div class="text-navy font-black text-3xl">3–0</div>
+        <div class="text-navy text-xs font-semibold uppercase tracking-wide">Group Stage</div>
+      </div>
+    </div>
+
+    <!-- Upcoming / Knockout -->
+    <div>
+      <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Knockout Round</h3>
+      <div class="space-y-2">
+        {% for game in tournament.upcoming %}
+        <div class="bg-white rounded-lg border border-yellow-300 shadow-sm p-4 flex items-center gap-4">
+          <span class="badge-sf text-xs font-bold px-2 py-1 rounded-full">{{ game.round }}</span>
+          <div class="flex-1 font-medium text-gray-800">
+            {% if game.home == "SF Winner" %}
+              Championship — TBD
+            {% else %}
+              {{ game.home }} <span class="text-gray-400 font-normal mx-1">vs</span> {{ game.away }}
+            {% endif %}
+          </div>
+          <div class="text-right text-xs text-gray-500">
+            <div class="font-medium text-gray-700">{{ game.date }}</div>
+            <div>{{ game.location }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Brackets -->
+    <div class="grid sm:grid-cols-2 gap-6">
+      {% for bracket in tournament.brackets %}
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="bg-navy px-4 py-2.5">
+          <h3 class="text-gold font-bold text-sm">{{ bracket.name }}</h3>
+        </div>
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wide">
+              <th class="text-left px-4 py-2 font-medium">Team</th>
+              <th class="px-2 py-2 text-center font-medium">MP</th>
+              <th class="px-2 py-2 text-center font-medium">W</th>
+              <th class="px-2 py-2 text-center font-medium">L</th>
+              <th class="px-2 py-2 text-center font-medium">GD</th>
+              <th class="px-2 py-2 text-center font-medium">PTS</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            {% for row in bracket.standings %}
+            <tr class="{% if row.get('highlight') %}highlight-row{% endif %} hover:bg-gray-50">
+              <td class="px-4 py-2.5 text-gray-800 leading-tight">
+                {% if row.get('highlight') %}<span class="text-navy font-bold">{{ row.team }}</span>
+                {% else %}{{ row.team }}{% endif %}
+              </td>
+              <td class="px-2 py-2.5 text-center text-gray-600">{{ row.mp }}</td>
+              <td class="px-2 py-2.5 text-center text-gray-600">{{ row.w }}</td>
+              <td class="px-2 py-2.5 text-center text-gray-600">{{ row.l }}</td>
+              <td class="px-2 py-2.5 text-center text-gray-600">{{ row.gd }}</td>
+              <td class="px-2 py-2.5 text-center font-bold text-navy">{{ row.pts }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Results -->
+    <div>
+      <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Group Stage Results</h3>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wide">
+              <th class="text-left px-4 py-2.5 font-medium">Date</th>
+              <th class="text-left px-4 py-2.5 font-medium">Match</th>
+              <th class="text-center px-4 py-2.5 font-medium">Score</th>
+              <th class="text-center px-4 py-2.5 font-medium">Result</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            {% for g in tournament.results %}
+            <tr class="hover:bg-gray-50">
+              <td class="px-4 py-3 text-gray-500 whitespace-nowrap">{{ g.date }}</td>
+              <td class="px-4 py-3 text-gray-800">{{ g.home }} vs {{ g.away }}</td>
+              <td class="px-4 py-3 text-center font-bold text-navy">{{ g.score }}</td>
+              <td class="px-4 py-3 text-center">
+                <span class="badge-win text-xs font-bold px-2 py-0.5 rounded-full">{{ g.result }}</span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== LEAGUE TAB ===== -->
+  <div id="panel-league" class="max-w-5xl mx-auto px-4 py-6 space-y-6 hidden">
+
+    <!-- Event banner -->
+    <div class="bg-navy text-white rounded-xl p-5">
+      <h2 class="text-xl font-bold text-gold">{{ league.name }}</h2>
+      <p class="text-blue-200 text-sm mt-1">{{ league.division }}</p>
+      <p class="text-blue-300 text-xs mt-1">👤 Coach: {{ league.coach }}</p>
+    </div>
+
+    <!-- Standings -->
+    <div>
+      <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Current Standings</h3>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wide">
+              <th class="text-left px-4 py-2 font-medium">Team</th>
+              <th class="px-2 py-2 text-center font-medium">MP</th>
+              <th class="px-2 py-2 text-center font-medium">W</th>
+              <th class="px-2 py-2 text-center font-medium">L</th>
+              <th class="px-2 py-2 text-center font-medium">D</th>
+              <th class="px-2 py-2 text-center font-medium">GF</th>
+              <th class="px-2 py-2 text-center font-medium">GA</th>
+              <th class="px-2 py-2 text-center font-medium">GD</th>
+              <th class="px-2 py-2 text-center font-medium">PTS</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            {% for row in league.standings %}
+            <tr class="{% if row.get('highlight') %}highlight-row{% endif %} hover:bg-gray-50">
+              <td class="px-4 py-2.5 font-bold text-navy">{{ row.team }}</td>
+              <td class="px-2 py-2.5 text-center text-gray-600">{{ row.mp }}</td>
+              <td class="px-2 py-2.5 text-center text-gray-600">{{ row.w }}</td>
+              <td class="px-2 py-2.5 text-center text-gray-600">{{ row.l }}</td>
+              <td class="px-2 py-2.5 text-center text-gray-600">{{ row.d }}</td>
+              <td class="px-2 py-2.5 text-center text-gray-600">{{ row.gf }}</td>
+              <td class="px-2 py-2.5 text-center text-gray-600">{{ row.ga }}</td>
+              <td class="px-2 py-2.5 text-center text-gray-600">{{ row.gd }}</td>
+              <td class="px-2 py-2.5 text-center font-bold text-navy">{{ row.pts }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p class="text-xs text-gray-400 px-4 py-2 border-t">Standings update as games are played. Full bracket standings available on GotsPort.</p>
+      </div>
+    </div>
+
+    <!-- Schedule -->
+    <div>
+      <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Full Schedule</h3>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wide">
+              <th class="text-left px-4 py-2.5 font-medium">Date</th>
+              <th class="text-left px-4 py-2.5 font-medium">Opponent</th>
+              <th class="text-left px-4 py-2.5 font-medium hidden sm:table-cell">Time</th>
+              <th class="text-left px-4 py-2.5 font-medium hidden md:table-cell">Location</th>
+              <th class="text-center px-4 py-2.5 font-medium">Result</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            {% for game in league.schedule %}
+            <tr class="hover:bg-gray-50">
+              <td class="px-4 py-3 text-gray-500 whitespace-nowrap text-xs">{{ game.date }}</td>
+              <td class="px-4 py-3 text-gray-800 font-medium">{{ game.opponent }}</td>
+              <td class="px-4 py-3 text-gray-500 whitespace-nowrap hidden sm:table-cell">{{ game.time }}</td>
+              <td class="px-4 py-3 text-gray-500 text-xs hidden md:table-cell">{{ game.location }}</td>
+              <td class="px-4 py-3 text-center">
+                {% if game.status == 'final' %}
+                  {% if game.result.startswith('W') %}
+                    <span class="badge-win text-xs font-bold px-2 py-0.5 rounded-full">{{ game.result }}</span>
+                  {% else %}
+                    <span class="badge-loss text-xs font-bold px-2 py-0.5 rounded-full">{{ game.result }}</span>
+                  {% endif %}
+                {% else %}
+                  <span class="badge-upcoming text-xs font-bold px-2 py-0.5 rounded-full">Upcoming</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <footer class="max-w-5xl mx-auto px-4 py-8 text-center text-xs text-gray-400">
+    Data sourced from <a href="https://system.gotsport.com" class="underline hover:text-gray-600">GotsPort</a> ·
+    <a href="https://www.calmagicsc.com/" class="underline hover:text-gray-600">calmagicsc.com</a>
+  </footer>
+
+  <script>
+    function showTab(name) {
+      ['tournament', 'league'].forEach(t => {
+        document.getElementById('panel-' + t).classList.toggle('hidden', t !== name);
+        const btn = document.getElementById('tab-' + t);
+        btn.className = btn.className.replace(/tab-active|tab-inactive/g, '');
+        btn.classList.add(t === name ? 'tab-active' : 'tab-inactive');
+      });
+    }
+  </script>
+
+</body>
+</html>
