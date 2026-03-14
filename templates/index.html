@@ -178,18 +178,19 @@
 
     <!-- Standings -->
     <div>
-      <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Current Standings</h3>
+      <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Bracket A Standings</h3>
       <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <table class="w-full text-sm">
           <thead>
             <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wide">
+              <th class="px-3 py-2 text-center font-medium">#</th>
               <th class="text-left px-4 py-2 font-medium">Team</th>
               <th class="px-2 py-2 text-center font-medium">MP</th>
               <th class="px-2 py-2 text-center font-medium">W</th>
               <th class="px-2 py-2 text-center font-medium">L</th>
               <th class="px-2 py-2 text-center font-medium">D</th>
-              <th class="px-2 py-2 text-center font-medium">GF</th>
-              <th class="px-2 py-2 text-center font-medium">GA</th>
+              <th class="px-2 py-2 text-center font-medium hidden sm:table-cell">GF</th>
+              <th class="px-2 py-2 text-center font-medium hidden sm:table-cell">GA</th>
               <th class="px-2 py-2 text-center font-medium">GD</th>
               <th class="px-2 py-2 text-center font-medium">PTS</th>
             </tr>
@@ -197,20 +198,28 @@
           <tbody class="divide-y divide-gray-100">
             {% for row in league.standings %}
             <tr class="{% if row.get('highlight') %}highlight-row{% endif %} hover:bg-gray-50">
-              <td class="px-4 py-2.5 font-bold text-navy">{{ row.team }}</td>
+              <td class="px-3 py-2.5 text-center text-gray-400 text-xs font-medium">{{ loop.index }}</td>
+              <td class="px-4 py-2.5 leading-tight">
+                {% if row.get('highlight') %}
+                  <span class="font-bold text-navy">{{ row.team }}</span>
+                  <span class="ml-1.5 text-xs bg-gold text-navy font-bold px-1.5 py-0.5 rounded">YOU</span>
+                {% else %}
+                  <span class="text-gray-800">{{ row.team }}</span>
+                {% endif %}
+              </td>
               <td class="px-2 py-2.5 text-center text-gray-600">{{ row.mp }}</td>
               <td class="px-2 py-2.5 text-center text-gray-600">{{ row.w }}</td>
               <td class="px-2 py-2.5 text-center text-gray-600">{{ row.l }}</td>
               <td class="px-2 py-2.5 text-center text-gray-600">{{ row.d }}</td>
-              <td class="px-2 py-2.5 text-center text-gray-600">{{ row.gf }}</td>
-              <td class="px-2 py-2.5 text-center text-gray-600">{{ row.ga }}</td>
+              <td class="px-2 py-2.5 text-center text-gray-600 hidden sm:table-cell">{{ row.gf }}</td>
+              <td class="px-2 py-2.5 text-center text-gray-600 hidden sm:table-cell">{{ row.ga }}</td>
               <td class="px-2 py-2.5 text-center text-gray-600">{{ row.gd }}</td>
               <td class="px-2 py-2.5 text-center font-bold text-navy">{{ row.pts }}</td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
-        <p class="text-xs text-gray-400 px-4 py-2 border-t">Standings update as games are played. Full bracket standings available on GotsPort.</p>
+        <p class="text-xs text-gray-400 px-4 py-2 border-t">Standings update as games are played. Not all teams have played the same number of games yet.</p>
       </div>
     </div>
 
