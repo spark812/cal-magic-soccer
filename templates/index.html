@@ -4,40 +4,48 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Cal Magic 2012G West — Season Hub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;1,700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
           colors: {
-            navy:  { DEFAULT: "#0a2463", light: "#1a3a8f", dark: "#061540" },
-            gold:  { DEFAULT: "#f5a623", light: "#ffc04d", dark: "#c47f0f" },
+            navy:  { DEFAULT: "#1a2f6b", light: "#2a4a9b", dark: "#101e45" },
+            sky:   { DEFAULT: "#5db3e0", light: "#85c9eb", dark: "#3a90c0" },
+            gold:  { DEFAULT: "#b8963e", light: "#d4b060", dark: "#8a6e28" },
+          },
+          fontFamily: {
+            heading: ["'Barlow Condensed'", "sans-serif"],
+            body:    ["'Barlow'", "sans-serif"],
           }
         }
       }
     }
   </script>
   <style>
-    .tab-active   { background: #0a2463; color: #f5a623; border-color: #f5a623; }
-    .tab-inactive { background: white;   color: #0a2463; border-color: #e5e7eb; }
-    .highlight-row { background: #fffbeb; font-weight: 600; }
-    .badge-win  { background:#dcfce7; color:#166534; }
-    .badge-loss { background:#fee2e2; color:#991b1b; }
+    body { font-family: 'Barlow', sans-serif; }
+    h1, h2, h3 { font-family: 'Barlow Condensed', sans-serif; }
+    .tab-active   { background: #1a2f6b; color: #5db3e0; border-color: #5db3e0; }
+    .tab-inactive { background: white;   color: #1a2f6b; border-color: #e5e7eb; }
+    .highlight-row { background: #eef6fc; font-weight: 600; }
+    .badge-win      { background:#dcfce7; color:#166534; }
+    .badge-loss     { background:#fee2e2; color:#991b1b; }
     .badge-upcoming { background:#dbeafe; color:#1e40af; }
-    .badge-sf   { background:#fef9c3; color:#854d0e; }
+    .badge-sf       { background:#fef9c3; color:#854d0e; }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen font-sans">
 
   <!-- Header -->
   <header class="bg-navy text-white shadow-lg">
-    <div class="max-w-5xl mx-auto px-4 py-5 flex items-center gap-4">
-      <div class="text-4xl">⚽</div>
+    <div class="max-w-5xl mx-auto px-4 py-4 flex items-center gap-4">
+      <img src="/static/logo.webp" alt="Cal Magic Logo" class="h-16 w-16 object-contain drop-shadow-md">
       <div>
-        <h1 class="text-2xl font-bold tracking-tight text-gold">Cal Magic 2012G West</h1>
-        <p class="text-sm text-blue-200 mt-0.5">California Magic Soccer Club · Season Hub</p>
+        <h1 class="text-3xl font-heading font-bold tracking-wide text-sky uppercase italic">Cal Magic 2012G West</h1>
+        <p class="text-sm text-sky-light mt-0.5 font-heading tracking-wider uppercase">California Magic Soccer Club · Season Hub</p>
       </div>
-      <div class="ml-auto text-right text-xs text-blue-300">
+      <div class="ml-auto text-right text-xs text-sky-light">
         <div>Last updated</div>
         <div class="font-medium text-white">{{ last_updated }}</div>
       </div>
@@ -202,7 +210,7 @@
               <td class="px-4 py-2.5 leading-tight">
                 {% if row.get('highlight') %}
                   <span class="font-bold text-navy">{{ row.team }}</span>
-                  <span class="ml-1.5 text-xs bg-gold text-navy font-bold px-1.5 py-0.5 rounded">YOU</span>
+                  <span class="ml-1.5 text-xs bg-sky text-white font-bold px-1.5 py-0.5 rounded">YOU</span>
                 {% else %}
                   <span class="text-gray-800">{{ row.team }}</span>
                 {% endif %}
