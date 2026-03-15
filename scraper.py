@@ -86,7 +86,7 @@ def clean_time_location(raw):
     date_match = re.search(r'(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},\s+\d{4}', raw)
     date = date_match.group(0) if date_match else ""
     # Extract time
-    time_match = re.search(r'\d{1,2}:\d{2}\s*(AM|PM)\s*(PST|PDT|EST|EDT)?', raw)
+    time_match = re.search(r'(?<!\d)\d{1,2}:\d{2}\s*(AM|PM)\s*(PST|PDT|EST|EDT)?', raw)
     time = time_match.group(0).strip() if time_match else "TBD"
     return date, time
 
