@@ -18,25 +18,65 @@ def fetch(url):
     return BeautifulSoup(r.text, "html.parser")
 
 
+# Manual overrides for clubs where the short team name doesn't share words with the club name
+_TEAM_OVERRIDES = {
+    "california magic": "Cal Magic 2012G West",
+    "los angeles bulls": "LA Bulls G12 DPLO",
+    "phoenix rush 2012": "Phoenix Rush Girls NL Premier 2",
+}
+
+
 def clean_team(name):
-    """Strip the club prefix GotsPort prepends (e.g. 'California Magic Soccer Club Cal Magic 2012G West')."""
-    # GotsPort duplicates club name before team name — find the shorter repeated portion and remove it
+    """Strip the club prefix GotsPort prepends before the actual team name.
+
+    GotsPort concatenates club display name + team name in the same cell,
+    e.g. 'Las Vegas Storm FC Las Vegas Storm FC G12 Academy'.
+    Strategy: detect a repeated word-prefix (case-insensitive) and return
+    everything from the second occurrence onward.
+    Falls back to stripping known club-name suffixes for abbreviation cases
+    like 'California Magic Soccer Club Cal Magic 2012G West'.
+    """
     name = name.strip()
-    # Remove known long prefixes
-    prefixes = [
-        "California Magic Soccer Club ",
-        "Mt Diablo Mustang Soccer ",
-        "Livermore Fusion SC ",
-        "Association Football Club ",
-        "Solano Surf ",
-        "Revolution FC ",
-        "1974 Newark FC ",
-        "UC Premier ",
+
+    # Check hardcoded overrides first (for club/team abbreviation mismatches)
+    lower = name.lower()
+    for key, override in _TEAM_OVERRIDES.items():
+        if lower.startswith(key):
+            return override
+
+    words = name.split()
+
+    # Try to find a repeated prefix (handles most GotsPort cases)
+    for i in range(1, len(words) // 2 + 1):
+        prefix = " ".join(words[:i]).lower()
+        rest   = " ".join(words[i:])
+        if rest.lower().startswith(prefix):
+            return rest.strip()
+
+    # Fallback: strip common club-name suffixes then re-check for repeated prefix
+    club_suffixes = [
+        " Soccer Club", " Football Club", " Soccer", " FC", " SC", " United"
     ]
-    for p in prefixes:
-        if name.startswith(p):
-            name = name[len(p):]
-    return name.strip()
+    short = name
+    for suffix in club_suffixes:
+        if suffix.lower() in short.lower():
+            idx = short.lower().index(suffix.lower())
+            candidate = (short[:idx] + short[idx + len(suffix):]).strip()
+            if len(candidate) < len(name) - 3:
+                short = candidate
+                break
+
+    # After stripping suffix, try repeated-prefix again on the shorter string
+    if short != name:
+        words2 = short.split()
+        for i in range(1, len(words2) // 2 + 1):
+            prefix = " ".join(words2[:i]).lower()
+            rest   = " ".join(words2[i:])
+            if rest.lower().startswith(prefix):
+                return rest.strip()
+        return short
+
+    return name
 
 
 def clean_time_location(raw):
@@ -84,7 +124,12 @@ def parse_standings(soup):
     return standings
 
 
-def parse_schedule(soup):
+def parse_schedule(soup, cal_magic_only=False):
+    """Parse schedule tables from a GotsPort page.
+
+    cal_magic_only=True  → league view: only Cal Magic rows, W/L from her perspective
+    cal_magic_only=False → tournament view: all rows, neutral score display
+    """
     games = []
     tables = soup.find_all("table")
     for table in tables:
@@ -100,36 +145,43 @@ def parse_schedule(soup):
                 continue
             entry = dict(zip(headers, cells))
             date, time = clean_time_location(entry.get("Time", ""))
-            home    = clean_team(entry.get("Home Team", ""))
-            away    = clean_team(entry.get("Away Team", ""))
-            result  = entry.get("Results", "-").strip()
-            location = entry.get("Location", "").split(" - ")[-1].strip() or entry.get("Location", "")
+            home     = clean_team(entry.get("Home Team", ""))
+            away     = clean_team(entry.get("Away Team", ""))
+            result   = entry.get("Results", "-").strip()
+            loc_raw  = entry.get("Location", "")
+            location = loc_raw.split(" - ")[-1].strip() if " - " in loc_raw else loc_raw.strip()
 
-            # Determine if Cal Magic is home or away and what the result was
             cal_home = CAL_MAGIC_KEY in home
             cal_away = CAL_MAGIC_KEY in away
-            if not cal_home and not cal_away:
-                opponent = f"{home} vs {away}"
-            else:
-                opponent = away if cal_home else home
 
-            # Parse score and result
-            score_match = re.match(r'(\d+)\s*-\s*(\d+)', result)
+            if cal_magic_only and not cal_home and not cal_away:
+                continue
+
+            score_match = re.search(r'(\d+)\s*-\s*(\d+)', result)
             status = "upcoming"
             result_label = ""
+
             if score_match:
                 h_score, a_score = int(score_match.group(1)), int(score_match.group(2))
-                cal_score    = h_score if cal_home else a_score
-                other_score  = a_score if cal_home else h_score
-                result_label = f"W {cal_score}–{other_score}" if cal_score > other_score else (
-                               f"D {cal_score}–{other_score}" if cal_score == other_score else
-                               f"L {cal_score}–{other_score}")
                 status = "final"
+                if cal_home or cal_away:
+                    # Show W/L from Cal Magic's perspective
+                    cal_score   = h_score if cal_home else a_score
+                    other_score = a_score if cal_home else h_score
+                    result_label = (f"W {cal_score}–{other_score}" if cal_score > other_score else
+                                    f"D {cal_score}–{other_score}" if cal_score == other_score else
+                                    f"L {cal_score}–{other_score}")
+                else:
+                    # Neutral score for non-Cal Magic games
+                    result_label = f"{h_score}–{a_score}"
 
             games.append({
                 "date":     date,
                 "time":     time,
-                "opponent": opponent,
+                "home":     home,
+                "away":     away,
+                "cal_home": cal_home,
+                "cal_away": cal_away,
                 "location": location,
                 "result":   result_label,
                 "status":   status,
@@ -139,16 +191,25 @@ def parse_schedule(soup):
 
 def get_league_data():
     soup = fetch(LEAGUE_URL)
-    # Get event name from page title/heading
-    heading = soup.find("h1") or soup.find("title")
-    name = heading.get_text(strip=True) if heading else "NorCal Premier Spring 2025–26"
-
+    schedule = parse_schedule(soup, cal_magic_only=True)
+    # Flatten to the shape the template expects
+    flat = []
+    for g in schedule:
+        opponent = g["away"] if g["cal_home"] else g["home"]
+        flat.append({
+            "date":     g["date"],
+            "time":     g["time"],
+            "opponent": opponent,
+            "location": g["location"],
+            "result":   g["result"],
+            "status":   g["status"],
+        })
     return {
         "name":      "NorCal Premier Spring 2025–26",
         "division":  "Female U14 — Gold — Region 3/4 — Bracket A",
         "coach":     "Alfredo Rocha",
         "standings": parse_standings(soup),
-        "schedule":  parse_schedule(soup),
+        "schedule":  flat,
     }
 
 
@@ -186,7 +247,7 @@ def get_tournament_data():
             all_brackets.append(bracket_rows)
 
     brackets = [{"name": f"Bracket {'ABCDEFGH'[i]}", "standings": b} for i, b in enumerate(all_brackets)]
-    schedule = parse_schedule(soup)
+    schedule = parse_schedule(soup, cal_magic_only=False)
     results  = [g for g in schedule if g["status"] == "final"]
     upcoming = [g for g in schedule if g["status"] == "upcoming"]
 
