@@ -82,11 +82,13 @@ def clean_team(name):
 def clean_time_location(raw):
     """Split a merged 'Mar 07, 20263:50 PM PSTField Change' cell into date, time, notes."""
     raw = raw.strip()
+    # GotsPort merges the 4-digit year directly with the time (e.g. '20266:40 PM') — insert a space
+    raw = re.sub(r'(\d{4})(\d)', r'\1 \2', raw)
     # Extract date
     date_match = re.search(r'(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},\s+\d{4}', raw)
     date = date_match.group(0) if date_match else ""
     # Extract time
-    time_match = re.search(r'(?<!\d)\d{1,2}:\d{2}\s*(AM|PM)\s*(PST|PDT|EST|EDT)?', raw)
+    time_match = re.search(r'\d{1,2}:\d{2}\s*(AM|PM)\s*(PST|PDT|EST|EDT)?', raw)
     time = time_match.group(0).strip() if time_match else "TBD"
     return date, time
 
